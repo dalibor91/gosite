@@ -8,6 +8,7 @@ import (
 	"os/user"
 	p "app/properties"
 	s "app/server"
+	h "app/helpers"
 )
 
 func setProps() {
@@ -16,22 +17,49 @@ func setProps() {
 		log.Panic("Unable to get current user")
 		os.Exit(1)
 	} else {
-		p.Set("app.dir", fmt.Sprintf("%s/.dweb", usr.HomeDir))
+		app_dir := fmt.Sprintf("%s/.dweb", usr.HomeDir)
+		p.Set("app.dir", app_dir)
+		if _, err := os.Stat(app_dir); err != nil {
+			fmt.Println("not found ", app_dir)
+			os.Mkdir(app_dir, 700)
+		}
 	}
 
-	p.Set("app.config", fmt.Sprintf("%s/config.ini", p.Get("app.dir")))
+	user_config := fmt.Sprintf("%s/config.ini", p.Get("app.dir"))
+	p.Set("app.config", user_config)
 
-	if _, err := os.Stat(p.Get("app.config")); !os.IsNotExist(err) {
-		log.Panic(fmt.Sprintf("file: %s does not exists", p.Get("app.config")))
+	if _, err := os.Stat(user_config); err != nil {
+		log.Panic(fmt.Sprintf("Config file '%s' does not exists or can not be read", user_config))
 		os.Exit(1)
 	}
 
-	p.Set("server.host.bind", "0.0.0.0:10050")
-	p.Set("server.host.name", "www.dalibor.test")
-	p.Set("server.host.alias", "dalibor.test")
-	p.Set("server.host.static_dir", "/go/api/static")
-	p.Set("server.host.static_url", "/assets/")
-	p.Set("server.host.template_dir", "/go/api/templates")
+	ini, errini := h.NewINIReader(user_config)
+
+	option_hostbind := "0.0.0.0:10050"
+	option_hostname := "dalibor.me"
+	option_hostalias := "www.dalibor.me"
+	option_staticdir := "/go/api/static"
+	option_staticurl := "/assets/"
+	option_templatedir := "/go/api/templates"
+
+	if errini == nil {
+		if sec, errsec := ini.GetIni().GetSection("host"); errsec == nil {
+			if _host, err := sec.GetKey("bind"); err == nil { option_hostbind = _host.String() }
+			if _name, err := sec.GetKey("name"); err == nil { option_hostname = _name.String() }
+			if _aias, err := sec.GetKey("alias"); err == nil { option_hostalias = _aias.String() }
+			if _dir, err := sec.GetKey("static_dir"); err == nil { option_staticdir = _dir.String() }
+			if _url, err := sec.GetKey("static_url"); err == nil { option_staticurl = _url.String() }
+			if _dir, err := sec.GetKey("templates"); err == nil { option_templatedir = _dir.String() }
+		}
+	}
+
+	p.Set("server.host.bind", option_hostbind)
+	p.Set("server.host.name", option_hostname)
+	p.Set("server.host.alias", option_hostalias)
+	p.Set("server.host.static_dir", option_staticdir)
+	p.Set("server.host.static_url", option_staticurl)
+	p.Set("server.host.template_dir", option_templatedir)
+
 	p.Dump()
 }
 
