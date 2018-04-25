@@ -17,4 +17,10 @@ func SetHTMLHeadersOk(w http.ResponseWriter, response string) {
 	io.WriteString(w, response)
 }
 
+func GetAuthorization(r *http.Request) {
+
+}
+
+
+
 

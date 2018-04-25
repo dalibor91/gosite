@@ -2,22 +2,22 @@ package server
 
 import (
 	mux "github.com/gorilla/mux"
-	ctrl "app/controllers/index"
+	ctrlauth "app/controllers/auth"
+	crelindex "app/controllers/index"
 	"strings"
 	"net/http"
-	"log"
 	"fmt"
+	h "app/helpers"
 )
 
 func main(r * mux.Router, static_location string, static_url string) (* mux.Router) {
-	r.HandleFunc("/", ctrl.Login).Methods("GET", "POST")
-
-	r.HandleFunc("/server.time", ctrl.Time).Methods("GET", "POST")
-	r.HandleFunc("/server.date", ctrl.Date).Methods("GET", "POST")
+	r.HandleFunc("/", ctrlauth.Login).Methods("GET", "POST")
+	r.HandleFunc("/server.time", crelindex.Time).Methods("GET", "POST")
+	r.HandleFunc("/server.date", crelindex.Date).Methods("GET", "POST")
 
 	if strings.Trim(static_location, " ") != "" && static_url != "" {
-		log.Println(fmt.Sprintf("Static location: %s", static_location))
-		log.Println(fmt.Sprintf("Static url: %s", static_url))
+		h.Log(fmt.Sprintf("Static location: %s", static_location), "debug")
+		h.Log(fmt.Sprintf("Static url: %s", static_url), "debug")
 		r.PathPrefix(static_url).Handler(http.StripPrefix(static_url, http.FileServer(http.Dir(static_location))))
 	}
 
@@ -25,13 +25,16 @@ func main(r * mux.Router, static_location string, static_url string) (* mux.Rout
 }
 
 func post(r * mux.Router) (* mux.Router) {
+	h.Log("setting POST routes", "debug")
 	return r
 }
 
 func get(r * mux.Router) (* mux.Router) {
-	r.HandleFunc("/login", ctrl.Login).Methods("GET")
-	r.HandleFunc("/register", ctrl.Register).Methods("GET")
-	r.HandleFunc("/forgot", ctrl.Register).Methods("GET")
+	h.Log("setting GET routes", "debug")
+
+	r.HandleFunc("/auth", ctrlauth.Login).Methods("GET")
+	r.HandleFunc("/register", ctrlauth.Register).Methods("GET")
+	r.HandleFunc("/forgot", ctrlauth.Forgot).Methods("GET")
 	return r
 }
 

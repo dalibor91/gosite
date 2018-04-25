@@ -12,12 +12,15 @@ import (
 )
 
 func setProps() {
+	h.Log("main.setProps()", "debug")
+
 	usr, err := user.Current()
 	if err != nil {
-		log.Panic("Unable to get current user")
+		h.Log("Unable to get current user", "error")
 		os.Exit(1)
 	} else {
 		app_dir := fmt.Sprintf("%s/.dweb", usr.HomeDir)
+		h.Log(fmt.Sprintf("main.setProps() -> HomeDir=%s", usr.HomeDir), "debug")
 		p.Set("app.dir", app_dir)
 		if _, err := os.Stat(app_dir); err != nil {
 			fmt.Println("not found ", app_dir)
@@ -29,7 +32,7 @@ func setProps() {
 	p.Set("app.config", user_config)
 
 	if _, err := os.Stat(user_config); err != nil {
-		log.Panic(fmt.Sprintf("Config file '%s' does not exists or can not be read", user_config))
+		h.Log(fmt.Sprintf("Config file '%s' does not exists or can not be read", user_config))
 		os.Exit(1)
 	}
 
@@ -43,7 +46,9 @@ func setProps() {
 	option_templatedir := "/go/api/templates"
 
 	if errini == nil {
+		h.Log("ini found read ini", "debug")
 		if sec, errsec := ini.GetIni().GetSection("host"); errsec == nil {
+			h.Log("read section 'host'", "debug")
 			if _host, err := sec.GetKey("bind"); err == nil { option_hostbind = _host.String() }
 			if _name, err := sec.GetKey("name"); err == nil { option_hostname = _name.String() }
 			if _aias, err := sec.GetKey("alias"); err == nil { option_hostalias = _aias.String() }
@@ -59,11 +64,14 @@ func setProps() {
 	p.Set("server.host.static_dir", option_staticdir)
 	p.Set("server.host.static_url", option_staticurl)
 	p.Set("server.host.template_dir", option_templatedir)
-
 	p.Dump()
 }
 
 func main() {
+	if os.Getenv("DEBUG") == "1" {
+		p.Set("debug", "1")
+	} else { p.Set("debug", "0") }
+
 	setProps()
 	router := s.Routes(p.Get("server.host.static_dir"), p.Get("server.host.static_url"))
 	log.Fatal(http.ListenAndServe(p.Get("server.host.bind"), router))

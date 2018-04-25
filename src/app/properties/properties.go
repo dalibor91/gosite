@@ -3,6 +3,7 @@ package properties
 import (
 	"strconv"
 	"fmt"
+	h "app/helpers"
 )
 
 var data map[string]string = make(map[string]string)
@@ -47,7 +48,8 @@ func GetInt(name string) int {
 
 func Dump() {
 	for key, val := range data {
-		fmt.Println(fmt.Sprintf(" %s = %s ", key, val))
+		//fmt.Println("kekus")
+		h.Log(fmt.Sprintf("properties -> %s = %s", key, val), "debug")
 	}
 }
 
